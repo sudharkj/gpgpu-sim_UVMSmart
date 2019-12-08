@@ -2636,7 +2636,7 @@ void gmmu_t::fill_lp_tree(struct lp_tree_node *node, std::set <mem_addr_t> &sche
 
                 while (iter != valid_pages.end() &&
                        (added_for_prefetch.find((*iter)->addr) != added_for_prefetch.end() ||
-                        !is_block_evictable((*iter)->addr, (*iter)->size)) {
+                        !is_block_evictable((*iter)->addr, (*iter)->size))) {
                     iter++;
                 }
 
