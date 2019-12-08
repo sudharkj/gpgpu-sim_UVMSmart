@@ -2294,7 +2294,9 @@ void gmmu_t::page_eviction_procedure() {
             evicted_pages.push_back(std::make_pair(bb_addr, MIN_PREFETCH_SIZE));
         }
         // clear the added for prefetch set
-        added_for_prefetch.clear();
+        if (!added_for_prefetch.empty()) {
+            added_for_prefetch.clear();
+        }
     } else if (evict_policy == eviction_policy::TBN) {
         // we evict multiple 64KB pages in the 2 MB allocation where this evictable belong
         std::list<eviction_t *>::iterator iter = valid_pages.begin();
@@ -2632,13 +2634,15 @@ void gmmu_t::fill_lp_tree(struct lp_tree_node *node, std::set <mem_addr_t> &sche
                 std::list<eviction_t *>::iterator iter = valid_pages.begin();
                 std::advance(iter, eviction_start);
 
-                while ((iter != valid_pages.end() &&
-                        added_for_prefetch.find((*iter)->addr) != added_for_prefetch.end()) ||
-                       !is_block_evictable((*iter)->addr, (*iter)->size)) {
+                while (iter != valid_pages.end() &&
+                       (added_for_prefetch.find((*iter)->addr) != added_for_prefetch.end() ||
+                        !is_block_evictable((*iter)->addr, (*iter)->size)) {
                     iter++;
                 }
 
-                if (iter != valid_pages.end()) {
+                if (iter != valid_pages.end() &&
+                    added_for_prefetch.find((*iter)->addr) == added_for_prefetch.end() &&
+                    is_block_evictable((*iter)->addr, (*iter)->size)) {
                     mem_addr_t page_addr = (*iter)->addr;
                     scheduled_basic_blocks.insert(page_addr);
                     added_for_prefetch.insert(page_addr);
@@ -3581,10 +3585,10 @@ void gmmu_t::do_hardware_prefetch(std::map <mem_addr_t, std::list<mem_fetch *>> 
                     cur_transfer_faulty_pages.push_back(m_gpu->get_global_memory()->get_page_num(page_addr));
                 }
 
-                fprintf(stderr,"Prefetcher: %d", prefetcher);
-                fprintf(stderr,"evict_policy: %d", evict_policy);
-                fprintf(stderr,"valid_pages: %x", &valid_pages);
-                fprintf(stderr,"added_for_prefetch: %x", &added_for_prefetch);
+//                fprintf(stderr, "Prefetcher: %d", prefetcher);
+//                fprintf(stderr, "evict_policy: %d", evict_policy);
+//                fprintf(stderr, "valid_pages: %x", &valid_pages);
+//                fprintf(stderr, "added_for_prefetch: %x", &added_for_prefetch);
                 if (prefetcher == hwardware_prefetcher::TBN || prefetcher == hwardware_prefetcher::TBN_MFU) {
                     struct lp_tree_node *root = get_lp_node(lp_pf_iter->first);
 
