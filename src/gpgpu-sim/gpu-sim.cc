@@ -3581,6 +3581,10 @@ void gmmu_t::do_hardware_prefetch(std::map <mem_addr_t, std::list<mem_fetch *>> 
                     cur_transfer_faulty_pages.push_back(m_gpu->get_global_memory()->get_page_num(page_addr));
                 }
 
+                fprintf(stderr,"Prefetcher: %d", prefetcher);
+                fprintf(stderr,"evict_policy: %d", evict_policy);
+                fprintf(stderr,"valid_pages: %x", &valid_pages);
+                fprintf(stderr,"added_for_prefetch: %x", &added_for_prefetch);
                 if (prefetcher == hwardware_prefetcher::TBN || prefetcher == hwardware_prefetcher::TBN_MFU) {
                     struct lp_tree_node *root = get_lp_node(lp_pf_iter->first);
 
