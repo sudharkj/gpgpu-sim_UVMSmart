@@ -2438,11 +2438,11 @@ void gmmu_t::sort_valid_pages() {
                    ((i->access_counter == j->access_counter) && (i->RW == j->RW) && (i->cycle > j->cycle));
         });
     } else if (evict_policy == eviction_policy::LFU) {
-            valid_pages.sort([](const eviction_t *i, const eviction_t *j) {
-                return (i->access_counter < j->access_counter) ||
-                       ((i->access_counter == j->access_counter) && (i->RW < j->RW)) ||
-                       ((i->access_counter == j->access_counter) && (i->RW == j->RW) && (i->cycle < j->cycle));
-            });
+        valid_pages.sort([](const eviction_t *i, const eviction_t *j) {
+            return (i->access_counter < j->access_counter) ||
+                   ((i->access_counter == j->access_counter) && (i->RW < j->RW)) ||
+                   ((i->access_counter == j->access_counter) && (i->RW == j->RW) && (i->cycle < j->cycle));
+        });
     } else {
         if (evict_policy == eviction_policy::TBN || evict_policy == eviction_policy::SEQUENTIAL_LOCAL) {
             std::map <mem_addr_t, std::list<eviction_t *>> tempMap;
@@ -2625,11 +2625,19 @@ void gmmu_t::fill_lp_tree(struct lp_tree_node *node, std::set <mem_addr_t> &sche
         if (node->valid_size == 0) {
             node->valid_size = MIN_PREFETCH_SIZE;
 
-            if (prefetcher == hwardware_prefetcher::TBN_MFU) {
+            if (prefetcher == hwardware_prefetcher::TBN_MFU && !valid_pages.empty()) {
+
+                int eviction_start = (int) (valid_pages.size() * m_config.reserve_accessed_page_percent / 100);
+
                 std::list<eviction_t *>::iterator iter = valid_pages.begin();
-                while (iter != valid_pages.end() && added_for_prefetch.find((*iter)->addr) != added_for_prefetch.end()) {
+                std::advance(iter, eviction_start);
+
+                while ((iter != valid_pages.end() &&
+                        added_for_prefetch.find((*iter)->addr) != added_for_prefetch.end()) ||
+                       !is_block_evictable((*iter)->addr, (*iter)->size)) {
                     iter++;
                 }
+
                 if (iter != valid_pages.end()) {
                     mem_addr_t page_addr = (*iter)->addr;
                     scheduled_basic_blocks.insert(page_addr);
@@ -3576,7 +3584,7 @@ void gmmu_t::do_hardware_prefetch(std::map <mem_addr_t, std::list<mem_fetch *>> 
                 if (prefetcher == hwardware_prefetcher::TBN || prefetcher == hwardware_prefetcher::TBN_MFU) {
                     struct lp_tree_node *root = get_lp_node(lp_pf_iter->first);
 
-                    if (prefetcher == hwardware_prefetcher::TBN_MFU) {
+                    if (prefetcher == hwardware_prefetcher::TBN_MFU && !valid_pages.empty()) {
                         sort_valid_pages();
                     }
 
