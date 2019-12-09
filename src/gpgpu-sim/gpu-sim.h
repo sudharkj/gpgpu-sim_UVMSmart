@@ -37,6 +37,7 @@
 #include <iostream>
 #include <fstream>
 #include <list>
+#include <set>
 #include <stdio.h>
 
 #include <functional>
@@ -798,6 +799,9 @@ private:
     // list of valid pages (valid = 1, accessed = 1/0, dirty = 1/0) ordered as LRU
     std::list<eviction_t *> valid_pages;
 
+    // maintains a set of addresses already added for prefetch based on MFU
+    std::set<mem_addr_t> added_for_prefetch;
+
     // page eviction policy
     enum class eviction_policy {
         LRU, TBN, SEQUENTIAL_LOCAL, RANDOM, LFU, LRU4K
@@ -805,12 +809,12 @@ private:
 
     // types of hardware prefetcher
     enum class hwardware_prefetcher {
-        DISBALED, TBN, SEQUENTIAL_LOCAL, RANDOM
+        DISBALED, TBN, SEQUENTIAL_LOCAL, RANDOM, TBN_MFU
     };
 
     // types of hardware prefetcher under over-subscription
     enum class hwardware_prefetcher_oversub {
-        DISBALED, TBN, SEQUENTIAL_LOCAL, RANDOM
+        DISBALED, TBN, SEQUENTIAL_LOCAL, RANDOM, TBN_MFU
     };
 
     // type of DMA
